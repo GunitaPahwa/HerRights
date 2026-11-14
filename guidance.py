@@ -38,6 +38,15 @@ def get_legal_guidance(user_issue):
             "brother refuses property", "ancestral property", 
             "father's property", "family property", "inheritance denied",
             "share of the property", "daughter property rights"
+        ],
+        "unequal remuneration": [
+            "lower salary", "paid less", "pay discrimination", 
+            "unequal salary", "same work", "gender pay gap"
+        ],
+        "economic abuse": [
+            "controls my bank account", "takes my salary", "controls my salary",
+            "refuses to give money", "denied access to money", 
+            "financial control", "controls my finances"
         ]
     }
 
@@ -151,3 +160,83 @@ def personalize_guidance(user_issue, results):
         "question": question,
         "rights": results[:3]
 }
+
+def suggest_complaint_type(results, user_issue=""):
+    complaint_mapping = {
+        "Workplace Sexual Harassment": [
+            "sexual harassment", "unwanted touching", "sexual advances"
+        ],
+        "Maternity Leave or Maternity Benefits Denial": [
+            "maternity", "pregnancy", "maternity leave"
+        ],
+        "Unequal Pay or Unpaid Wages": [
+            "equal pay", "unequal pay", "pay discrimination", "lower salary", "unpaid wages", "wage discrimination"
+        ],
+        "Workplace Discrimination or Unfair Treatment": [
+            "workplace discrimination", "gender discrimination", "unfair treatment at work"
+        ],
+        "Domestic Violence": [
+            "domestic violence", "physical abuse", "husband hits", "husband beats", "violence at home", "hits me", "beats me", "physically hurts me", "physical violence", "abusive husband"
+        ],
+        "Economic Abuse or Financial Control": [
+            "economic abuse", "financial control", "controls my bank account", "takes my salary", "financial abuse"
+        ],
+        "Dowry Harassment": [
+            "dowry", "dowry harassment", "in laws demand", "expensive gifts", "money from my parents"
+        ],
+        "Maintenance or Financial Support": [
+            "maintenance", "financial support", "child support", "living expenses"
+        ],
+        "Marriage-Related Harassment or Cruelty": [
+            "cruelty", "matrimonial cruelty", "marital cruelty"
+        ],
+        "Child Custody or Child-Related Concerns": [
+            "child custody", "guardianship"
+        ],
+        "Property or Inheritance Rights Denial": [
+            "inheritance", "property share", "ancestral property", "property rights"
+        ],
+        "Financial Exploitation or Fraud": [
+            "financial fraud", "financial exploitation", "bank fraud"
+        ],
+        "Stridhan or Personal Property Withholding": [
+            "stridhan", "jewellery withheld", "return my jewellery"
+        ],
+        "Stalking, Threats or Intimidation": [
+            "stalking", "following me", "keeps calling", "criminal intimidation"
+        ],
+        "Cyber Harassment or Online Abuse": [
+            "cyber harassment", "online abuse", "fake instagram", "fake account", "online threats"
+        ],
+        "Sexual Assault or Physical Harassment": [
+            "sexual assault", "physical harassment", "sexual violence"
+        ]
+    }
+
+    issue = normalize_text(user_issue)
+    best_type = None
+    best_score = 0
+
+    for complaint_type, phrases in complaint_mapping.items():
+        score = 0
+        for phrase in phrases:
+            phrase = normalize_text(phrase)
+            if re.search(r"\b" + re.escape(phrase) + r"\b", issue):
+                score += len(phrase.split())
+
+        if score > best_score:
+            best_score = score
+            best_type = complaint_type
+
+    if best_type:
+        return best_type
+
+    for right in results:
+        title = normalize_text(right["title"])
+        for complaint_type, phrases in complaint_mapping.items():
+            for phrase in phrases:
+                phrase = normalize_text(phrase)
+                if re.search(r"\b" + re.escape(phrase) + r"\b", title):
+                    return complaint_type
+
+    return None
