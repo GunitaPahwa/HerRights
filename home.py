@@ -4,28 +4,28 @@ def show_home():
     def open_category(category_name):
         st.session_state["selected_category"] = category_name
         st.session_state["page"] = "Explore Rights"
+
     #Welcome section
-    st.markdown(
-        "<h1 style='text-align:center;'> HerRights ⚖️</h1>",
-        unsafe_allow_html=True
-    )
+    left, right = st.columns([1.1, 1], gap="large")
 
-    st.markdown(
-        "<h3 style='text-align:center;'>"
-        "Know Your Rights. Understand Your Options."
-        "</h3>",
-        unsafe_allow_html=True
-    )
+    with left:
+        st.markdown(
+            "<h1 style='font-size: 65px;'> HerRights ⚖️</h1>",
+            unsafe_allow_html=True
+        )
 
-    st.write("")
-    st.markdown(
-        "<p style='text-align:center;'>"
-        "HerRights is a legal awareness platform designed "
-        "to help women understand their rights unders Indian law."
-        "</p>"
-    )
+        st.markdown(
+            "<h3>Know Your Rights. Understand Your Options.</h3>",
+            unsafe_allow_html=True
+        )
 
-    st.divider()
+        st.write(
+            "HerRights is a legal awareness platform designed to help "
+            "women understand their rights under Indian law."
+        )
+
+    with right:
+        st.image("assets/hero.png", use_container_width=True)
 
     #Rights categories
     st.header("Explore Your Rights")

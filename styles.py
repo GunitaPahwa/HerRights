@@ -78,5 +78,21 @@ def apply_styles():
         div[data-testid="stVerticalBlockBorderWrapper"] {
             border-color: #D9A7B0;
         }
+
+        /* Dividers */
+        hr {
+            border-color: #E3D8D3;
+        }
+
+        /* Mobile layout */
+        @media (max-width: 768px) {
+            .block-container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            div[role="radiogroup"] {
+                flex-wrap: wrap;
+            }
+        }
     </style>    
     """, unsafe_allow_html=True)
