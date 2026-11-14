@@ -1,3 +1,4 @@
 herrights.db
 __pychache__/
+*.pyc
 .streamlit/secrets.toml
