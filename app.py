@@ -11,6 +11,7 @@ from navigation import show_navigation
 from database import create_database, import_legal_data, get_rights_by_category
 from guidance import get_legal_guidance, personalize_guidance, suggest_complaint_type
 from complaint import generate_complaint, get_submission_guidance
+from support import show_support
 
 #Configure the website
 st.set_page_config(
@@ -43,9 +44,16 @@ elif page == "Explore Rights":
         "Safety & Protection"
     ]
 
-    selected_category = st.selectbox(
+    selected_category = st.session_state.pop("selected_category", None)
+    if selected_category in categories:
+        default_index = categories.index(selected_category)
+    else:
+        default_index = 0
+    
+    category = st.selectbox(
         "Select a category:",
-        categories
+        categories,
+        index=default_index
     )
 
     rights = get_rights_by_category(selected_category)
@@ -136,12 +144,12 @@ elif page == "Legal Guidance":
                     "specific details. This does not mean you have no legal rights."
                 )            
 
-#Complain generator page
+#Complaint generator page
 elif page == "Complaint Generator":
     st.title("Complaint Generator")
     st.write(
         "Create a formal complaint based on your situation. "
-        "You can review and editit before downloading."
+        "You can review and edit it before downloading."
     )
 
     complaint_types = [
@@ -246,10 +254,7 @@ elif page == "Complaint Generator":
 
 #Help and support page
 elif page == "Help & Support":
-    st.title("Help & Support")
-    st.write("Find legal aid services, helplines, "
-             "and official support resources.")
-    st.info("Verified support resources will be added soon.")
+    show_support()
 
 #Footer
 st.divider()
