@@ -53,7 +53,7 @@ def import_legal_data():
 def get_rights_by_category(category):
     with sqlite3.connect(DATABASE_NAME) as connection:
         cursor = connection.execute("""
-            SELECT title, description, law
+            SELECT title, description, law, source_url
             FROM legal_rights
             WHERE category = ?
             ORDER BY title

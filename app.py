@@ -1,6 +1,6 @@
 import streamlit as st
 
-#Import fucntions from our other Python files
+#Import functions from our other Python files
 from styles import apply_styles
 import importlib
 import styles
@@ -12,6 +12,36 @@ from database import create_database, import_legal_data, get_rights_by_category
 from guidance import get_legal_guidance, personalize_guidance, suggest_complaint_type
 from complaint import generate_complaint, get_submission_guidance
 from support import show_support
+import re
+from datetime import datetime
+
+def extract_incident_date(text):
+    patterns = [
+        r"\b\d{1,2}/\d{1,2}/\d{4}\b",
+        r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b"
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            for date_format in ("%d/%m/%Y", "%d %B %Y", "%d %b %Y"):
+                try:
+                    return datetime.strptime(match.group(), date_format).date()
+                except ValueError:
+                    continue
+    return None
+
+def extract_incident_location(text):
+    patterns = [
+        r"\b(?:incident occurred|incident happened|happened|occurred)\s(?:at|in)\s+([A-Za-z ]+?)(?:[.,]|$)",
+        r"\b(?:at our|at my|in our|in my)\s(home|house|workplace|company|office)\b",
+        r"\blive\b[^.!?]{0,80}?\bin\s+([A-Za-z ]+?)(?:[.,]|$)",
+        r"\bresid(?:e|ing)\s+in\s+([A-Za-z ]+?)(?:[.,]|$)"
+    ]
+    for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+    return ""
 
 #Configure the website
 st.set_page_config(
@@ -25,7 +55,6 @@ import_legal_data()
 
 #Homepage
 page = show_navigation()
-st.divider()
 
 #Homepage
 if page == "Home":
@@ -56,13 +85,16 @@ elif page == "Explore Rights":
         index=default_index
     )
 
-    rights = get_rights_by_category(selected_category)
+    rights = get_rights_by_category(category)
     if rights:
-        for title, description, law in rights:
+        for title, description, law, source_url in rights:
             with st.container(border=True):
                 st.subheader(title)
                 st.write(description)
-                st.caption(f"Applicable Law: {law}")
+                st.markdown(f"**Applicable Law:** {law}")
+                if source_url:
+                    st.link_button("📖 View Official Legal Source", source_url)
+    
     else:
         st.info("Legal information for this category will be added soon.")
     
@@ -123,6 +155,7 @@ elif page == "Legal Guidance":
                 def open_complaint_generator():
                     st.session_state["suggested_complaint_type"] = suggested_type
                     st.session_state["complaint_issue"] = user_issue
+                    st.session_state["complaint_issue_recipient_pending"] = True
                     st.session_state["page"] = "Complaint Generator"
                 
                 st.button(
@@ -189,19 +222,65 @@ elif page == "Complaint Generator":
 
     name = st.text_input("Your Full Name")
     address = st.text_area("Your Address", height=70)
+    
+    recipient_suggestions = {
+        "Workplace Sexual Harassment": "Internal Committee (IC)",
+        "Workplace Discrimination or Unfair Treatment": "HR Department",
+        "Maternity Leave or Maternity Benefits Denial": "HR Department",
+        "Unequal Pay or Unpaid Wages": "Employer / Labour Authority",
+        "Domestic Violence": "Protection Officer",
+        "Economic Abuse or Financial Control": "Protection Officer",
+        "Dowry Harassment": "Station House Officer",
+        "Maintenance or Financial Support": "Appropriate Family Court",
+        "Marriage-Related Harassment or Cruelty": "Protection Officer / Police",
+        "Child Custody or Child-Related Concerns": "Appropriate Family Court",
+        "Property or Inheritance Rights Denial": "Legal Aid Authority",
+        "Stridhan or Personal Withholding": "Police / Protection Officer",
+        "Stalking, Threats or Intimidation": "Station House Officer",
+        "Cyber Harassment or Online Abuse": "Cyber Crime Police",
+        "Sexual Assault or Physical Harassment": "Station House Officer"
+    }
+    if "complaint_recipient" not in st.session_state:
+        st.session_state["complaint_recipient"] = ""
+    if st.session_state.pop("complaint_issue_recipient_pending", False):
+        st.session_state["complaint_recipient"] = recipient_suggestions.get(complaint_type, "")
     recipient = st.text_input(
         "Recipient / Authority",
-        placeholder="e.g., Station House Officer, Police Station"
+        placeholder="e.g., Station House Officer, Police Station",
+        key="complaint_recipient"
     )
-    incident_date = st.date_input("Date of Incident")
-    incident_location = st.text_input("Location of Incident")
+
+    transferred_issue = st.session_state.get("complaint_issue")
+    if transferred_issue:
+        extracted_date = extract_incident_date(transferred_issue)
+        if extracted_date:
+            st.session_state["complaint_incident_date"] = extracted_date
+        
+        extracted_location = extract_incident_location(transferred_issue)
+        if extracted_location:
+            st.session_state["complaint_incident_location"] = extracted_location
+
+    if "complaint_incident_date" not in st.session_state:
+        st.session_state["complaint_incident_date"] = None
+    if "complaint_incident_location" not in st.session_state:
+        st.session_state["complaint_incident_location"] = ""
+    incident_date = st.date_input(
+        "Date of Incident",
+        key="complaint_incident_date",
+        value=None,
+        format="DD/MM/YYYY"
+    )
+    incident_location = st.text_input(
+        "Location of Incident",
+        key="complaint_incident_location"
+    )
     
     if "complaint_description" not in st.session_state:
         st.session_state["complaint_description"] = ""
     
     transferred_issue = st.session_state.pop("complaint_issue", None)
     if transferred_issue is not None:
-        st.session_state["complaint-description"] = transferred_issue
+        st.session_state["complaint_description"] = transferred_issue
 
     description = st.text_area(
         "Describe What Happened",
@@ -222,8 +301,9 @@ elif page == "Complaint Generator":
         
         else:
             st.session_state["complaint_draft"] = generate_complaint(
-                complaint_type, name, address, recipient, incident_location,
-                incident_date.strftime("%d/%m/%Y"), description, requested_action
+                complaint_type, name, address, recipient, 
+                incident_date.strftime("%d/%m/%Y") if incident_date else "Not specified",
+                incident_location, description, requested_action
             )
 
     st.divider()

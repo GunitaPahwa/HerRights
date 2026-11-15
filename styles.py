@@ -23,16 +23,16 @@ def apply_styles():
 
         /* buttons */
         div.stButton > button {
-            background-color: #456B5A;
-            color: white;
+            background-color: #87AA94;
+            color: #342D30;
             border-radius: 12px;
             border: none;
             padding: 10px 24px;
         }
 
         div.stButton > button:hover {
-            background-color: #345344;
-            color: white;
+            background-color: #A5C1AE;
+            color: #342D30;
         }
 
         /* info boxes */
@@ -47,32 +47,45 @@ def apply_styles():
         }
 
         /* Navigation bar */
-        div[role="radiogroup"] {
-            background-color: #FFFFFF;
-            padding: 12px 18px;
-            border-radius: 15px;
-            border: 1px solid #E9E0DC;
-            gap: 12px;
+        button[data-variant="segmented_control"] {
+            border: none !important;
+            border-radius: 5px !important;
+            background-color: transparent !important;
+            padding: 10px 15px !important;
+            margin: 0 !important;
         }
 
-        div[role="radiogroup"] label {
-            background-color: #F6F3EA;
-            border-radius: 10px;
-            padding: 8px 16px;
-            cursor: pointer;
+        button[data-variant="segmented_control"] p {
+            color: #702F46 !important;
+            font-weight: 600 !important;
+            font-size: 15px;
+            white-space: nowrap;
         }
 
-        div[role="radiogroup"] label p {
-            color:  #702F46 !important;
-            font-weight: 600;
+        button[data-variant="segmented_control"][data-selected="true"],
+        button[data-variant="segmented_control"][aria-checked="true"] {
+            background-color: #456B5A !important;
+            border-radius: 5px !important;
         }
 
-        div[role="radiogroup"] label:has(input:checked) {
-            background-color: #456B5A;
-        }
-
-        div[role="radiogroup"] label:has(input:checked) p {
+        button[data-variant="segmented_control"][data-selected="true"] p,
+        button[data-variant="segmented_control"][aria-checked="true"] p {
             color: #FFFFFF !important;
+        }
+
+        button[data-variant="segmented_control"]:not([data-selected="true"]):hover {
+            background-color: #F1E9E5 !important;
+        }
+
+        div[data-testid="stButtonGroup"] div[role="radiogroup"] {
+            display: flex !important;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px !important;
+            background-color: #FFF9F5 !important;
+            border: 2px solid #E9E0DC !important;
+            border-radius: 10px !important;
+            padding: 10px 25px !important;
         }
 
         div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -89,9 +102,6 @@ def apply_styles():
             .block-container {
                 padding-left: 1rem;
                 padding-right: 1rem;
-            }
-            div[role="radiogroup"] {
-                flex-wrap: wrap;
             }
         }
     </style>    

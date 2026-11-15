@@ -50,7 +50,7 @@ def generate_complaint(complaint_type, name, address, recipient, incident_date,
         "Cyber Harassment or Online Abuse":
             "Complaint Regarding Cyber Harassment",
 
-        "Sexual Assualt or Physical Harassment":
+        "Sexual Assault or Physical Harassment":
             "Complaint Regarding Sexual or Physical Assault"
     }
 
@@ -226,7 +226,7 @@ def get_submission_guidance(complaint_type):
             "safe. Avoid sharing sensitive evidence publicly."
         ),
     
-        "Sexual Assualt or Physical Harassment":(
+        "Sexual Assault or Physical Harassment":(
             "Police or Emergency Services",
             "Contact police to report suspected offences, Seek medical "
             "assistance and safety support as needed.",

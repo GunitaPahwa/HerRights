@@ -9,12 +9,14 @@ def normalize_text(text):
 
 def get_legal_guidance(user_issue):
     issue = normalize_text(user_issue)
+    if not issue:
+        return []
 
     synonyms = {
         "maintenance": [
-            "financial support", "living expenses", 
-            "refuses to provide money", "husband left me", 
-            "support our child", "child support", "abondoned me"
+            "financial support", "living expenses", "husband left me",
+            "refuses to provide money", "support our child", 
+            "child support", "abandoned me"
         ],
         "sexual harassment": [
             "inappropriate touching", "touching me", "sexual messages",
@@ -29,9 +31,8 @@ def get_legal_guidance(user_issue):
             "dowry demand", "harassment by in laws"
         ],
         "stalking": [
-            "following me", "follows me", "keeps calling", 
-            "unwanted calls", "waiting outside", "tracking me",
-            "multiple messages"
+            "following me", "follows me", "keeps calling", "tracking me",
+            "unwanted calls", "waiting outside", "multiple messages"
         ],
         "inheritance": [
             "property share", "father passed away", "inherit property",
@@ -44,11 +45,28 @@ def get_legal_guidance(user_issue):
             "unequal salary", "same work", "gender pay gap"
         ],
         "economic abuse": [
-            "controls my bank account", "takes my salary", "controls my salary",
+            "controls my bank account", "takes my salary", "financial control",
             "refuses to give money", "denied access to money", 
-            "financial control", "controls my finances"
+            "controls my salary", "controls my finances"
         ]
     }
+
+    def phrase_matches(phrase):
+        phrase = normalize_text(phrase)
+        if not phrase:
+            return False
+
+        pattern = r"\b" + re.escape(phrase) + r"\b"
+        return re.search(pattern, issue) is not None
+
+    def phrase_score(phrase):
+        words = normalize_text(phrase).split()
+        if len(words) >= 3:
+            return 5
+        elif len(words) == 2:
+            return 3
+        else:
+            return 1
 
     with sqlite3.connect(DATABASE_NAME) as connection:
         connection.row_factory = sqlite3.Row
@@ -59,27 +77,47 @@ def get_legal_guidance(user_issue):
     matches = []
 
     for right in rights:
-        keywords = right["keywords"].split("|")
         title = normalize_text(right["title"])
+        keywords = right["keywords"].split("|")
         score = 0
+        matched_phrases = set()
         for keyword in keywords:
             keyword = normalize_text(keyword)
-            if keyword and re.search(r"\b" + re.escape(keyword) + r"\b", issue):
-                score += 2
+            if keyword and phrase_matches(keyword):
+                matched_phrases.add(keyword)
+                score += phrase_score(keyword)
 
-        for legal_topic, expressions in synonyms.items():
-            if legal_topic in title:
+        for topic, expressions in synonyms.items():
+            if topic in title:
                 for expression in expressions:
                     expression = normalize_text(expression)
-                    if re.search(r"\b" + re.escape(expression) + r"\b", issue):
-                        score += 3
+                    if (phrase_matches(expression) and expression not in matched_phrases):
+                        matched_phrases.add(expression)
+                        score += phrase_score(expression)
 
-        if score > 0:
-            matches.append((score, dict(right)))
+        if phrase_matches(title):
+            score += 5
 
+        meaningful_matches = [
+            phrase for phrase in matched_phrases
+            if len(phrase.split()) >= 2
+        ]
+        if meaningful_matches or phrase_matches(title):
+            matches.append((score, dict(right)))    
+            
     matches.sort(key=lambda item: item[0], reverse=True)
+    if not matches:
+        return []
 
-    return [right for score, right in matches[:3]]
+    highest_score = matches[0][0]
+    minimum_score = max(3, highest_score * 0.5)
+
+    filtered = [
+        right for score, right in matches
+        if score >= minimum_score
+    ]
+
+    return filtered[:3]
 
 def personalize_guidance(user_issue, results):
     if not results:
@@ -122,7 +160,7 @@ def personalize_guidance(user_issue, results):
         introduction = (
             "I'm sorry you're facing this situation. "
             "You deserve to feel safe, respected, and supported. "
-            "Let's explore the legal protections adn practical steps "
+            "Let's explore the legal protections and practical steps "
             "that may be available to you."
         )
 
