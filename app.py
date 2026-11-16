@@ -9,9 +9,11 @@ importlib.reload(styles)
 from home import show_home
 from navigation import show_navigation
 from database import create_database, import_legal_data, get_rights_by_category
+from explore_rights import show_explore_rights
 from guidance import get_legal_guidance, personalize_guidance, suggest_complaint_type
 from complaint import generate_complaint, get_submission_guidance
 from support import show_support
+from html import escape
 import re
 from datetime import datetime
 
@@ -62,42 +64,8 @@ if page == "Home":
 
 #Explore rights page
 elif page == "Explore Rights":
-    st.title("Explore Your Rights")
-    st.write("Learn about your legal rights under Indian law.")
+    show_explore_rights()
 
-    categories = [
-        "Workplace Rights",
-        "Domestic Violence",
-        "Marriage & Family",
-        "Financial & Property Rights",
-        "Safety & Protection"
-    ]
-
-    selected_category = st.session_state.pop("selected_category", None)
-    if selected_category in categories:
-        default_index = categories.index(selected_category)
-    else:
-        default_index = 0
-    
-    category = st.selectbox(
-        "Select a category:",
-        categories,
-        index=default_index
-    )
-
-    rights = get_rights_by_category(category)
-    if rights:
-        for title, description, law, source_url in rights:
-            with st.container(border=True):
-                st.subheader(title)
-                st.write(description)
-                st.markdown(f"**Applicable Law:** {law}")
-                if source_url:
-                    st.link_button("📖 View Official Legal Source", source_url)
-    
-    else:
-        st.info("Legal information for this category will be added soon.")
-    
 #Legal guidance page
 elif page == "Legal Guidance":
     st.title("Get Legal Guidance")
@@ -106,11 +74,18 @@ elif page == "Legal Guidance":
 
     user_issue = st.text_area(
         "Describe the issue you are facing:",
-        placeholder="Explain your situation here...",
+        placeholder=(
+            "For example: I am facing harassment at my workplace and "
+            "want to understand my legal rights and options..."
+        ),
         height=150
     )
+    st.caption(
+        "🔒 For your privacy, avoid sharing sensititve personal details "
+        "such as your full address, phone number, or identification numbers."
+    )
 
-    if st.button("Get Guidance"):
+    if st.button("Get Guidance", key="get_guidance_btn"):
         if not user_issue.strip():
             st.warning("Please describe your issue first.")
         else:
@@ -128,13 +103,24 @@ elif page == "Legal Guidance":
 
                 st.markdown("### Understanding Your Situtation")
                 st.write("Based on your description, these issues may be relevant.")
-                for concern in guidance["concerns"]:
-                    st.write(f"• {concern}")
+                concerns_html = "".join(
+                    f'<span class="guidance-tag">{escape(concern)}</span>'
+                    for concern in guidance["concerns"]
+                )
+                st.markdown(
+                    f'<div class="guidance-tags">{concerns_html}</div>',
+                    unsafe_allow_html=True
+                )
 
                 st.markdown("### What You Can Do Next")
                 for number, right in enumerate(guidance["rights"], start=1):
-                    with st.container(border=True):
-                        st.markdown(f"**{number}. {right['title']}**")
+                    with st.container(border=True, key=f"guidance_right_{number}"):
+                        st.markdown(
+                            f"<div style='font-family: Georgia, serif; font-size: 21px; "
+                            f"font-weight: bold; color: #702F46;'>"
+                            f"{number}. {escape(right['title'])}</div>",
+                            unsafe_allow_html=True
+                        )
                         st.write(right["recommended_actions"])
                         
                         with st.expander("View legal rights and possible remedies."):
@@ -144,10 +130,23 @@ elif page == "Legal Guidance":
                                 f"**Possible Remedies:** "
                                 f"{right['possible_remedies']}"
                             )
-                            st.write(f"**References:** {right['source_url']}")
+                            if right["source_url"]:
+                                st.link_button(
+                                    "View Official Legal Source",
+                                    right["source_url"],
+                                    icon=":material/menu_book:"
+                                )
 
-                st.markdown("### A Question to Help You Further")
-                st.info(guidance["question"])
+                st.markdown("### A Moment to Reflect")
+                st.write("As you consider your next steps, think about this question:")
+                st.markdown(
+                    f"""
+                        <div class="guidance-question">{escape(guidance["question"])}</div>
+                """, unsafe_allow_html=True)
+                st.caption(
+                    "You don't need to answer here. This question is intended to help "
+                    "you consider your situation and what support you may need."
+                )
 
                 st.subheader("Need to Take Action?")
                 suggested_type = suggest_complaint_type(results, user_issue)
@@ -219,9 +218,6 @@ elif page == "Complaint Generator":
     if complaint_type is None:
         st.info("Please select a complaint type to continue.")
         st.stop()
-
-    name = st.text_input("Your Full Name")
-    address = st.text_area("Your Address", height=70)
     
     recipient_suggestions = {
         "Workplace Sexual Harassment": "Internal Committee (IC)",
@@ -244,11 +240,16 @@ elif page == "Complaint Generator":
         st.session_state["complaint_recipient"] = ""
     if st.session_state.pop("complaint_issue_recipient_pending", False):
         st.session_state["complaint_recipient"] = recipient_suggestions.get(complaint_type, "")
-    recipient = st.text_input(
-        "Recipient / Authority",
-        placeholder="e.g., Station House Officer, Police Station",
-        key="complaint_recipient"
-    )
+    
+    name_col, recipient_col = st.columns(2, gap="medium")
+    with name_col:
+        name = st.text_input("Your Full Name")
+    with recipient_col:
+        recipient = st.text_input(
+            "Recipient / Authority",
+            placeholder="e.g., Station House Officer, Police Station",
+            key="complaint_recipient"
+        )
 
     transferred_issue = st.session_state.get("complaint_issue")
     if transferred_issue:
@@ -264,17 +265,23 @@ elif page == "Complaint Generator":
         st.session_state["complaint_incident_date"] = None
     if "complaint_incident_location" not in st.session_state:
         st.session_state["complaint_incident_location"] = ""
-    incident_date = st.date_input(
-        "Date of Incident",
-        key="complaint_incident_date",
-        value=None,
-        format="DD/MM/YYYY"
-    )
-    incident_location = st.text_input(
-        "Location of Incident",
-        key="complaint_incident_location"
-    )
     
+    date_col, location_col = st.columns(2, gap="medium")
+    with date_col:
+        incident_date = st.date_input(
+            "Date of Incident",
+            key="complaint_incident_date",
+            value=None,
+            format="DD/MM/YYYY"
+        )
+    with location_col:
+        incident_location = st.text_input(
+            "Location of Incident",
+            key="complaint_incident_location"
+        )
+    
+    address = st.text_area("Your Address", height=70)
+
     if "complaint_description" not in st.session_state:
         st.session_state["complaint_description"] = ""
     
@@ -294,7 +301,7 @@ elif page == "Complaint Generator":
         placeholder="Describe the assistance or action you are seeking..."
     )
 
-    if st.button("Generate Complaint"):
+    if st.button("Generate Complaint", key="guidance_complaint"):
         if not all([name.strip(), address.strip(), recipient.strip(),
                     incident_location.strip(), description.strip()]):
             st.warning("Please complete the required details.")
@@ -309,22 +316,40 @@ elif page == "Complaint Generator":
     st.divider()
     st.subheader("Where to Submit Your Complaint")
     authority, instructions, notes = get_submission_guidance(complaint_type)
-    st.markdown(f"**Relevant Authority:** {authority}")
-    st.markdown(f"**How to Submit:** {instructions}")
-    st.info(f"Important: {notes}")
+    with st.container(key="submission_card"):
+        st.markdown(
+            f"""
+            <div class="submission-content">
+                <div class="submission-section">
+                    <div class="submission-label">⚖ Relevant Authority</div>
+                    <p>{escape(authority)}</p>
+                </div>
+                <div class="submission-separator"></div>
+                <div class="submission-section">
+                    <div class="submission-label">▤ How to Submit</div>
+                    <p>{escape(instructions)}</p>
+                </div>
+                <div class="submission-important">
+                    <p>&#x1F6C8;<strong> Important:</strong> {escape(notes)}</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True
+        )
     
     if "complaint_draft" in st.session_state:
         st.subheader("Review Your Complaint")
         st.text_area(
-            "Edit you complaint before downloading:",
+            "Review and edit your complaint before downloading:",
             key="complaint_draft",
-            height=400
+            height=350
         )
         st.download_button(
             "Download Complaint (.txt)",
             data=st.session_state["complaint_draft"],
             file_name="HerRights_Complaint.txt",
-            mime="text/plain"
+            mime="text/plain",
+            icon=":material/download:",
+            key="download_complaint"
         )
         st.info(
             "This is an editable complaint draft, not an official filing. "

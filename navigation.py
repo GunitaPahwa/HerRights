@@ -2,6 +2,13 @@ import streamlit as st
 
 def show_navigation():
     pages = ["Home", "Explore Rights", "Legal Guidance", "Complaint Generator", "Help & Support"]
+    page_icons = {
+        "Home": "⌂",
+        "Explore Rights": "☷",
+        "Legal Guidance": "§",
+        "Complaint Generator": "✎",
+        "Help & Support": "♡"
+    }
     
     if "page" not in st.session_state:
         st.session_state["page"] = "Home"
@@ -22,6 +29,7 @@ def show_navigation():
             selected_page = st.segmented_control(
                 "Navigation",
                 options=pages,
+                format_func=lambda page: f"{page_icons[page]} {page}",
                 key="page",
                 label_visibility="collapsed",
                 width="content"

@@ -11,12 +11,12 @@ def show_home():
     with left:
         st.markdown("""
             <div style="padding-top: 35px;">
-                <h1 style="font-family: Georgia, serif; font-size: clamp(40px, 5vw, 64px); 
+                <h1 style="font-family: Georgia, serif; font-size: clamp(60px, 10vw, 100px); 
                 font-weight: 800; color: #702F46; margin: -30px 0 0 0;">
-                    HerRights <span style="font-size: 50px;"> ⚖️</span>
+                    HerRights
                 </h1>
-                <p style="color: #456B5A; font-size: 16px; font-weight: 700;
-                letter-spacing: 2px; margin-bottom: 25px;">
+                <p style="color: #456B5A; font-size: 16px; font-weight: 700; line-height: 15px;
+                letter-spacing: 8px; margin-bottom: 25px;">
                     EMPOWERMENT THROUGH AWARENESS
                 </p>
                 <h2 style="font-family: Georgia, serif; font-size: 45px;
@@ -35,24 +35,10 @@ def show_home():
             </div>
         """,unsafe_allow_html=True)
 
-        # st.markdown(
-        #     "<h1 style='font-size: 65px;'> HerRights ⚖️</h1>",
-        #     unsafe_allow_html=True
-        # )
-
-        # st.markdown(
-        #     "<h3>Know Your Rights. Claim your Space.</h3>",
-        #     unsafe_allow_html=True
-        # )
-
-        # st.write(
-        #     "HerRights is a legal awareness platform designed to help "
-        #     "women understand their rights under Indian law."
-        # )
-
     with right:
         st.image("assets/hero.png", use_container_width=True)
 
+    st.divider()
     #Rights categories
     st.markdown(
         "<h2 style='text-align: center;'>Explore by Category</h2>",
@@ -68,41 +54,53 @@ def show_home():
     st.write("")
 
     categories = [
-        ("💼 Workplace Rights",
-        "Harassment, discrimination and maternity benefits"),
+        (" Workplace Rights",
+        "Know your rights at work, including safety, equality, and protection from harassment."),
 
-        ("🏡 Domestic Violence",
-        "Protection against domestic abuse"),
+        (" Domestic Violence",
+        "Get information on legal protection, immediate support, and remedies for domestic abuse."),
 
-        ("💍 Marriage & Family",
-        "Marriage, divorce, maintenance and custody"),
+        (" Marriage & Family",
+        "Understand your rights related to marriage, divorece, maintenance, and child custody."),
 
-        ("💰 Financial & Property Rights",
-        "Inheritance, property and financial rights"),
+        (" Financial & Property Rights",
+        "Learn about your rights to property, inheritance, maintenance, and financial independence."),
 
-        ("🛡️ Safety & Protection",
-        "Stalking, harassment and personal safety")
+        (" Safety & Protection",
+        "Find laws and support for your safety in public, private, and online spaces.")
     ]
 
     #Display categories in three columns
-    columns = st.columns(5, gap="small")
-    for col, (title, description) in zip(columns, categories):
+    first_row = st.columns(3, gap="medium")
+    second_row = st.columns([1, 2, 2, 1], gap="medium")
+    card_columns = first_row + [second_row[1], second_row[2]]
+    icon_files = [
+        "workplace.png", "domestic.png", "marriage.png", "financial.png", "safety.png"
+    ]
+    for col, (title, description), icon_file in zip(card_columns, categories, icon_files):
         with col:
             with st.container(border=True):
-                st.markdown(
-                    f"<div style='height: 85px; display: flex; align-items: center;'>"
-                    f"<h3 style='font-size: 20px;'>{title}</h3>"
-                    f"</div>",
-                    unsafe_allow_html=True
+                icon_col, title_col = st.columns(
+                    [1, 3.5], gap="small", vertical_alignment="center"
                 )
-                st.markdown(
-                    f"<div style='min-height: 75px;'>{description}</div>",
-                    unsafe_allow_html=True
-                )
+                with icon_col:
+                    st.image(f"assets/{icon_file}", use_container_width=True)
+                with title_col:
+                    st.markdown(
+                        f"<h3 style='font-family: Georgia, serif; font-size: 24px; font-weight: bold; color: #702F46; margin: 0;'>"
+                        f"{title}</h3>",
+                        unsafe_allow_html=True
+                    )
 
-                category_name = title.split(" ", 1)[1]
+                st.markdown(
+                    f"<div style='min-height: 55px; line-height: 1.5;'>{description}</div>",
+                    unsafe_allow_html=True
+                )
+                category_name = title.strip()
                 st.button(
                     "Explore Rights",
+                    icon=":material/arrow_forward:",
+                    icon_position="right",
                     key=f"home_{category_name}",
                     use_container_width=True,
                     on_click=open_category,
