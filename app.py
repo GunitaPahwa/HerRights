@@ -81,7 +81,7 @@ elif page == "Legal Guidance":
         height=150
     )
     st.caption(
-        "🔒 For your privacy, avoid sharing sensititve personal details "
+        "🔒 For your privacy, avoid sharing sensitive personal details "
         "such as your full address, phone number, or identification numbers."
     )
 

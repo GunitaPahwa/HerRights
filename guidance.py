@@ -117,7 +117,7 @@ def get_legal_guidance(user_issue):
         if score >= minimum_score
     ]
 
-    return filtered[:3]
+    return filtered[:2]
 
 def personalize_guidance(user_issue, results):
     if not results:
